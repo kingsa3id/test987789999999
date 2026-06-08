@@ -308,7 +308,7 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
 function FeaturedProducts() {
   return (
     <Section id="featured" title={dict.sections.featured.title} subtitle={dict.sections.featured.subtitle} tinted>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
         {products.filter((p) => p.featured).slice(0, 4).map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
