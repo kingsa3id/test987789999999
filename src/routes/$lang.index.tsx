@@ -292,7 +292,7 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
           href={out ? "#contact" : `https://wa.me/${siteConfig.business.whatsapp}?text=${encodeURIComponent(t(product.name, lang))}`}
           target={out ? undefined : "_blank"}
           rel="noopener noreferrer"
-          className={`mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
+          className={`mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
             out
               ? "bg-muted text-muted-foreground cursor-not-allowed pointer-events-none"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
