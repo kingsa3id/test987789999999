@@ -256,25 +256,26 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
   const { lang } = useI18n();
   const out = product.status === "out";
   return (
-    <Card className="group overflow-hidden rounded-2xl border-border p-0 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border p-0 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
       <div className="relative aspect-square bg-[image:var(--gradient-hero)] bg-secondary flex items-center justify-center overflow-hidden">
-        <div className="text-7xl transition-transform duration-500 group-hover:scale-110">{product.image}</div>
-        <div className="absolute top-3 start-3 flex flex-col gap-1.5">
+        <div className="text-6xl sm:text-7xl transition-transform duration-500 group-hover:scale-110">{product.image}</div>
+        <div className="absolute top-2 start-2 sm:top-3 sm:start-3 flex flex-col gap-1.5">
           {product.status === "new" && (
-            <Badge className="bg-success text-success-foreground border-0">{t(dict.badges.new, lang)}</Badge>
+            <Badge className="bg-success text-success-foreground border-0 text-[10px] sm:text-xs">{t(dict.badges.new, lang)}</Badge>
           )}
           {product.status === "sale" && (
-            <Badge className="bg-destructive text-destructive-foreground border-0">{t(dict.badges.sale, lang)}</Badge>
+            <Badge className="bg-destructive text-destructive-foreground border-0 text-[10px] sm:text-xs">{t(dict.badges.sale, lang)}</Badge>
           )}
           {product.status === "out" && (
-            <Badge className="bg-muted text-muted-foreground border-0">{t(dict.badges.out, lang)}</Badge>
+            <Badge className="bg-muted text-muted-foreground border-0 text-[10px] sm:text-xs">{t(dict.badges.out, lang)}</Badge>
           )}
           {product.featured && (
-            <Badge className="bg-accent text-accent-foreground border-0">{t(dict.badges.featured, lang)}</Badge>
+            <Badge className="bg-accent text-accent-foreground border-0 text-[10px] sm:text-xs">{t(dict.badges.featured, lang)}</Badge>
           )}
         </div>
       </div>
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+
         <h3 className="font-semibold text-foreground line-clamp-1">{t(product.name, lang)}</h3>
         <p className="mt-1 text-sm text-muted-foreground line-clamp-2 min-h-10">{t(product.description, lang)}</p>
         <div className="mt-3 flex items-baseline gap-2">
@@ -291,7 +292,7 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
           href={out ? "#contact" : `https://wa.me/${siteConfig.business.whatsapp}?text=${encodeURIComponent(t(product.name, lang))}`}
           target={out ? undefined : "_blank"}
           rel="noopener noreferrer"
-          className={`mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
+          className={`mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
             out
               ? "bg-muted text-muted-foreground cursor-not-allowed pointer-events-none"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -308,7 +309,7 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
 function FeaturedProducts() {
   return (
     <Section id="featured" title={dict.sections.featured.title} subtitle={dict.sections.featured.subtitle} tinted>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
         {products.filter((p) => p.featured).slice(0, 4).map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
@@ -320,7 +321,7 @@ function FeaturedProducts() {
 function AllProducts() {
   return (
     <Section id="products" title={dict.sections.products.title} subtitle={dict.sections.products.subtitle}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
