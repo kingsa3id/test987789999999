@@ -145,13 +145,29 @@ export const uploadProductImage = createServerFn({ method: "POST" })
 
 /* ---------------- SETTINGS ---------------- */
 
+export type SettingsMap = {
+  business?: {
+    name?: string;
+    phone?: string;
+    whatsapp?: string;
+    email?: string;
+    address?: string;
+    city?: string;
+    maps_url?: string;
+  };
+  hero?: { title_ar?: string; title_fr?: string; desc_ar?: string; desc_fr?: string };
+  [key: string]: Record<string, string | undefined> | undefined;
+};
+
 export const getSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<SettingsMap> => {
     const { data, error } = await context.supabase.from("settings").select("*");
     if (error) throw new Error(error.message);
-    const out: Record<string, Record<string, unknown>> = {};
-    for (const row of data ?? []) out[row.key] = row.value as Record<string, unknown>;
+    const out: SettingsMap = {};
+    for (const row of data ?? []) {
+      (out as Record<string, unknown>)[row.key] = row.value as Record<string, string | undefined>;
+    }
     return out;
   });
 
