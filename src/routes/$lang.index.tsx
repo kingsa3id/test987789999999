@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { siteConfig, type Lang } from "@/config/site";
 import { dict, t } from "@/config/i18n";
-import { categories, products, reviews } from "@/config/catalog";
+import { categories, products as fallbackProducts, reviews, type Product } from "@/config/catalog";
 import { useI18n } from "@/lib/i18n-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import heroImg from "@/assets/hero-appliances.jpg";
+import { getPublicSiteData, type PublicProduct, type PublicSettings } from "@/lib/public.functions";
 import {
   Phone,
   MessageCircle,
@@ -23,9 +24,82 @@ import {
   X,
   Globe,
 } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
+
+/* ---------------- Site context (merged config + DB settings) ---------------- */
+
+type Site = typeof siteConfig;
+const SiteContext = createContext<Site>(siteConfig);
+const useSite = () => useContext(SiteContext);
+
+function mergeSite(settings: PublicSettings | undefined): Site {
+  const b = settings?.business ?? {};
+  const h = settings?.hero ?? {};
+  return {
+    business: {
+      name: b.name ? { ar: b.name, fr: b.name } : siteConfig.business.name,
+      tagline: siteConfig.business.tagline,
+      phone: b.phone || siteConfig.business.phone,
+      phoneDisplay: b.phone || siteConfig.business.phoneDisplay,
+      whatsapp: (b.whatsapp || siteConfig.business.whatsapp).replace(/[^\d]/g, ""),
+      email: b.email || siteConfig.business.email,
+      address: b.address ? { ar: b.address, fr: b.address } : siteConfig.business.address,
+      city: b.city ? { ar: b.city, fr: b.city } : siteConfig.business.city,
+      mapsEmbed: b.maps_url || siteConfig.business.mapsEmbed,
+      social: siteConfig.business.social,
+    },
+    hero: {
+      title: {
+        ar: h.title_ar || siteConfig.hero.title.ar,
+        fr: h.title_fr || siteConfig.hero.title.fr,
+      },
+      subtitle: {
+        ar: h.desc_ar || siteConfig.hero.subtitle.ar,
+        fr: h.desc_fr || siteConfig.hero.subtitle.fr,
+      },
+    },
+  } as Site;
+}
+
+function mapDbProduct(p: PublicProduct): Product {
+  const statusMap: Record<string, Product["status"]> = {
+    out_of_stock: "out",
+    sale: "sale",
+    new: "new",
+    coming_soon: null,
+    in_stock: null,
+  };
+  return {
+    id: p.id,
+    category: p.category as Product["category"],
+    name: { ar: p.name_ar, fr: p.name_fr },
+    description: { ar: p.description_ar ?? "", fr: p.description_fr ?? "" },
+    price: p.price ?? 0,
+    status: statusMap[p.status] ?? null,
+    featured: p.featured,
+    image: p.image_signed_url ?? "📦",
+  };
+}
+
+/* ---------------- Route ---------------- */
 
 export const Route = createFileRoute("/$lang/")({
+  loader: async () => {
+    try {
+      const data = await getPublicSiteData();
+      const products: Product[] =
+        data.products.length > 0 ? data.products.map(mapDbProduct) : fallbackProducts;
+      return { products, settings: data.settings as PublicSettings };
+    } catch {
+      return { products: fallbackProducts, settings: {} as PublicSettings };
+    }
+  },
+  errorComponent: ({ error }) => (
+    <div className="container-padded py-20 text-center text-destructive">{error.message}</div>
+  ),
+  notFoundComponent: () => (
+    <div className="container-padded py-20 text-center">Not found.</div>
+  ),
   head: ({ params }) => {
     const lang = (params.lang as Lang) ?? "ar";
     const title =
@@ -76,14 +150,16 @@ export const Route = createFileRoute("/$lang/")({
 });
 
 function Home() {
+  const { products, settings } = Route.useLoaderData();
+  const site = mergeSite(settings);
   return (
-    <>
+    <SiteContext.Provider value={site}>
       <Header />
       <main>
         <Hero />
         <Categories />
-        <FeaturedProducts />
-        <AllProducts />
+        <FeaturedProducts products={products} />
+        <AllProducts products={products} />
         <WhyUs />
         <Reviews />
         <MapSection />
@@ -91,13 +167,14 @@ function Home() {
       </main>
       <Footer />
       <FloatingActions />
-    </>
+    </SiteContext.Provider>
   );
 }
 
 /* -------------------- HEADER -------------------- */
 function Header() {
   const { lang, setLang } = useI18n();
+  const site = useSite();
   const [open, setOpen] = useState(false);
   const nav = [
     { id: "categories", label: dict.nav.categories },
@@ -114,7 +191,7 @@ function Header() {
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-card)]">
             E
           </span>
-          <span className="hidden sm:inline">{t(siteConfig.business.name, lang)}</span>
+          <span className="hidden sm:inline">{t(site.business.name, lang)}</span>
         </a>
         <nav className="hidden md:flex items-center gap-6">
           {nav.map((n) => (
@@ -137,7 +214,7 @@ function Header() {
             {lang === "ar" ? "FR" : "ع"}
           </button>
           <a
-            href={`tel:${siteConfig.business.phone}`}
+            href={`tel:${site.business.phone}`}
             className="hidden sm:inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02]"
           >
             <Phone className="h-4 w-4" />
@@ -166,7 +243,7 @@ function Header() {
               </a>
             ))}
             <a
-              href={`tel:${siteConfig.business.phone}`}
+              href={`tel:${site.business.phone}`}
               className="mt-2 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground"
             >
               <Phone className="h-4 w-4" />
@@ -182,6 +259,7 @@ function Header() {
 /* -------------------- HERO -------------------- */
 function Hero() {
   const { lang } = useI18n();
+  const site = useSite();
   return (
     <section id="top" className="relative overflow-hidden">
       <div className="absolute inset-0">
@@ -200,20 +278,20 @@ function Hero() {
             {t({ ar: "🇩🇿 الجزائر", fr: "🇩🇿 Algérie" }, lang)}
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold leading-[1.1] tracking-tight">
-            {t(siteConfig.hero.title, lang)}
+            {t(site.hero.title, lang)}
           </h1>
           <p className="mt-5 text-lg text-primary-foreground/85 max-w-xl">
-            {t(siteConfig.hero.subtitle, lang)}
+            {t(site.hero.subtitle, lang)}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[var(--shadow-glow)]">
-              <a href={`tel:${siteConfig.business.phone}`}>
+              <a href={`tel:${site.business.phone}`}>
                 <Phone className="h-5 w-5" />
                 {t(dict.cta.call, lang)}
               </a>
             </Button>
             <Button asChild size="lg" variant="outline" className="bg-whatsapp text-whatsapp-foreground border-0 hover:bg-whatsapp/90">
-              <a href={`https://wa.me/${siteConfig.business.whatsapp}`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://wa.me/${site.business.whatsapp}`} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="h-5 w-5" />
                 {t(dict.cta.whatsapp, lang)}
               </a>
@@ -252,13 +330,26 @@ function Categories() {
 }
 
 /* -------------------- PRODUCTS -------------------- */
-function ProductCard({ product }: { product: (typeof products)[number] }) {
+function ProductCard({ product }: { product: Product }) {
   const { lang } = useI18n();
+  const site = useSite();
   const out = product.status === "out";
+  const isImageUrl = typeof product.image === "string" && product.image.startsWith("http");
   return (
     <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border p-0 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
       <div className="relative aspect-square bg-[image:var(--gradient-hero)] bg-secondary flex items-center justify-center overflow-hidden">
-        <div className="text-6xl sm:text-7xl transition-transform duration-500 group-hover:scale-110">{product.image}</div>
+        {isImageUrl ? (
+          <img
+            src={product.image}
+            alt={t(product.name, lang)}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="text-6xl sm:text-7xl transition-transform duration-500 group-hover:scale-110">
+            {product.image}
+          </div>
+        )}
         <div className="absolute top-2 start-2 sm:top-3 sm:start-3 flex flex-col gap-1.5">
           {product.status === "new" && (
             <Badge className="bg-success text-success-foreground border-0 text-[10px] sm:text-xs">{t(dict.badges.new, lang)}</Badge>
@@ -275,7 +366,6 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
         </div>
       </div>
       <div className="flex flex-1 flex-col p-3 sm:p-4">
-
         <h3 className="font-semibold text-foreground line-clamp-1">{t(product.name, lang)}</h3>
         <p className="mt-1 text-sm text-muted-foreground line-clamp-2 min-h-10">{t(product.description, lang)}</p>
         <div className="mt-3 flex items-baseline gap-2">
@@ -289,7 +379,7 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
           )}
         </div>
         <a
-          href={out ? "#contact" : `https://wa.me/${siteConfig.business.whatsapp}?text=${encodeURIComponent(t(product.name, lang))}`}
+          href={out ? "#contact" : `https://wa.me/${site.business.whatsapp}?text=${encodeURIComponent(t(product.name, lang))}`}
           target={out ? undefined : "_blank"}
           rel="noopener noreferrer"
           className={`mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
@@ -306,11 +396,13 @@ function ProductCard({ product }: { product: (typeof products)[number] }) {
   );
 }
 
-function FeaturedProducts() {
+function FeaturedProducts({ products }: { products: Product[] }) {
+  const featured = products.filter((p) => p.featured).slice(0, 4);
+  if (featured.length === 0) return null;
   return (
     <Section id="featured" title={dict.sections.featured.title} subtitle={dict.sections.featured.subtitle} tinted>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
-        {products.filter((p) => p.featured).slice(0, 4).map((p) => (
+        {featured.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
       </div>
@@ -318,7 +410,7 @@ function FeaturedProducts() {
   );
 }
 
-function AllProducts() {
+function AllProducts({ products }: { products: Product[] }) {
   return (
     <Section id="products" title={dict.sections.products.title} subtitle={dict.sections.products.subtitle}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
@@ -384,11 +476,12 @@ function Reviews() {
 
 /* -------------------- MAP -------------------- */
 function MapSection() {
+  const site = useSite();
   return (
     <Section id="map" title={dict.sections.map.title} subtitle={dict.sections.map.subtitle} tinted>
       <div className="overflow-hidden rounded-2xl border border-border shadow-[var(--shadow-card)] aspect-[16/8]">
         <iframe
-          src={siteConfig.business.mapsEmbed}
+          src={site.business.mapsEmbed}
           width="100%"
           height="100%"
           style={{ border: 0 }}
@@ -405,29 +498,30 @@ function MapSection() {
 /* -------------------- CONTACT -------------------- */
 function Contact() {
   const { lang } = useI18n();
+  const site = useSite();
   const items = [
     {
       icon: Phone,
       label: dict.sections.contact.phoneLabel,
-      value: siteConfig.business.phoneDisplay,
-      href: `tel:${siteConfig.business.phone}`,
+      value: site.business.phoneDisplay,
+      href: `tel:${site.business.phone}`,
     },
     {
       icon: MessageCircle,
       label: dict.sections.contact.whatsappLabel,
-      value: siteConfig.business.phoneDisplay,
-      href: `https://wa.me/${siteConfig.business.whatsapp}`,
+      value: site.business.phoneDisplay,
+      href: `https://wa.me/${site.business.whatsapp}`,
     },
     {
       icon: Mail,
       label: dict.sections.contact.emailLabel,
-      value: siteConfig.business.email,
-      href: `mailto:${siteConfig.business.email}`,
+      value: site.business.email,
+      href: `mailto:${site.business.email}`,
     },
     {
       icon: MapPin,
       label: dict.sections.contact.addressLabel,
-      value: t(siteConfig.business.address, lang),
+      value: t(site.business.address, lang),
       href: "#map",
     },
   ];
@@ -458,31 +552,32 @@ function Contact() {
 /* -------------------- FOOTER -------------------- */
 function Footer() {
   const { lang } = useI18n();
+  const site = useSite();
   return (
     <footer className="mt-20 bg-primary text-primary-foreground">
       <div className="container-padded grid grid-cols-1 md:grid-cols-3 gap-10 py-14">
         <div>
           <div className="flex items-center gap-2 font-bold text-lg">
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">E</span>
-            {t(siteConfig.business.name, lang)}
+            {t(site.business.name, lang)}
           </div>
-          <p className="mt-3 text-sm text-primary-foreground/80">{t(siteConfig.business.tagline, lang)}</p>
+          <p className="mt-3 text-sm text-primary-foreground/80">{t(site.business.tagline, lang)}</p>
         </div>
         <div>
           <h4 className="font-semibold mb-3">{t(dict.footer.contactUs, lang)}</h4>
           <ul className="space-y-2 text-sm text-primary-foreground/85">
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> {siteConfig.business.phoneDisplay}</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> {siteConfig.business.email}</li>
-            <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {t(siteConfig.business.address, lang)}</li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> {site.business.phoneDisplay}</li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> {site.business.email}</li>
+            <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {t(site.business.address, lang)}</li>
           </ul>
         </div>
         <div>
           <h4 className="font-semibold mb-3">{t(dict.footer.follow, lang)}</h4>
           <div className="flex gap-3">
-            <a href={siteConfig.business.social.facebook} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+            <a href={site.business.social.facebook} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
               <Facebook className="h-5 w-5" />
             </a>
-            <a href={siteConfig.business.social.instagram} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+            <a href={site.business.social.instagram} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
               <Instagram className="h-5 w-5" />
             </a>
           </div>
@@ -490,7 +585,7 @@ function Footer() {
       </div>
       <div className="border-t border-primary-foreground/15">
         <div className="container-padded py-5 text-center text-sm text-primary-foreground/70">
-          © {new Date().getFullYear()} {t(siteConfig.business.name, lang)}. {t(dict.footer.rights, lang)}
+          © {new Date().getFullYear()} {t(site.business.name, lang)}. {t(dict.footer.rights, lang)}
         </div>
       </div>
     </footer>
@@ -500,10 +595,11 @@ function Footer() {
 /* -------------------- FLOATING ACTIONS -------------------- */
 function FloatingActions() {
   const { lang } = useI18n();
+  const site = useSite();
   return (
     <div className="fixed bottom-5 end-5 z-50 flex flex-col gap-3">
       <a
-        href={`https://wa.me/${siteConfig.business.whatsapp}`}
+        href={`https://wa.me/${site.business.whatsapp}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={t(dict.cta.whatsapp, lang)}
@@ -512,7 +608,7 @@ function FloatingActions() {
         <MessageCircle className="h-6 w-6" />
       </a>
       <a
-        href={`tel:${siteConfig.business.phone}`}
+        href={`tel:${site.business.phone}`}
         aria-label={t(dict.cta.call, lang)}
         className="md:hidden grid h-14 w-14 place-items-center rounded-full bg-accent text-accent-foreground shadow-[var(--shadow-elegant)] transition-transform hover:scale-110"
       >
