@@ -535,12 +535,14 @@ function Contact() {
       value: site.business.phoneDisplay,
       href: `tel:${site.business.phone}`,
     },
-    {
-      icon: MessageCircle,
-      label: dict.sections.contact.whatsappLabel,
-      value: site.business.phoneDisplay,
-      href: `https://wa.me/${site.business.whatsapp}`,
-    },
+    ...(site.socialLinks.whatsapp_url
+      ? [{
+          icon: MessageCircle,
+          label: dict.sections.contact.whatsappLabel,
+          value: site.business.phoneDisplay,
+          href: site.socialLinks.whatsapp_url,
+        }]
+      : []),
     {
       icon: Mail,
       label: dict.sections.contact.emailLabel,
