@@ -23,6 +23,12 @@ type Biz = {
   maps_url?: string;
 };
 type Hero = { title_ar?: string; title_fr?: string; desc_ar?: string; desc_fr?: string };
+type Social = {
+  whatsapp_url?: string;
+  instagram_url?: string;
+  facebook_url?: string;
+  tiktok_url?: string;
+};
 
 function SettingsPage() {
   const qc = useQueryClient();
