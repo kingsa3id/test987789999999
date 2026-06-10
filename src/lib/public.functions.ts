@@ -28,6 +28,12 @@ export type PublicSettings = {
     maps_url?: string;
   };
   hero?: { title_ar?: string; title_fr?: string; desc_ar?: string; desc_fr?: string };
+  social?: {
+    whatsapp_url?: string;
+    instagram_url?: string;
+    facebook_url?: string;
+    tiktok_url?: string;
+  };
 };
 
 export const getPublicSiteData = createServerFn({ method: "GET" }).handler(async () => {
