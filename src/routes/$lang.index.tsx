@@ -431,13 +431,22 @@ function FeaturedProducts({ products }: { products: Product[] }) {
 }
 
 function AllProducts({ products }: { products: Product[] }) {
+  const { lang } = useI18n();
   return (
     <Section id="products" title={dict.sections.products.title} subtitle={dict.sections.products.subtitle}>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-      </div>
+      {products.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 md:p-16 text-center text-muted-foreground">
+          <p className="text-lg font-medium">
+            {lang === "ar" ? "لا توجد منتجات متاحة حالياً" : "Aucun produit disponible actuellement"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
