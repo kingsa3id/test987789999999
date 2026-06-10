@@ -87,11 +87,10 @@ export const Route = createFileRoute("/$lang/")({
   loader: async () => {
     try {
       const data = await getPublicSiteData();
-      const products: Product[] =
-        data.products.length > 0 ? data.products.map(mapDbProduct) : fallbackProducts;
+      const products: Product[] = data.products.map(mapDbProduct);
       return { products, settings: data.settings as PublicSettings };
     } catch {
-      return { products: fallbackProducts, settings: {} as PublicSettings };
+      return { products: [] as Product[], settings: {} as PublicSettings };
     }
   },
   errorComponent: ({ error }) => (
