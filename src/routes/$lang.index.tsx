@@ -605,12 +605,26 @@ function Footer() {
         <div>
           <h4 className="font-semibold mb-3">{t(dict.footer.follow, lang)}</h4>
           <div className="flex gap-3">
-            <a href={site.business.social.facebook} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
-              <Facebook className="h-5 w-5" />
-            </a>
-            <a href={site.business.social.instagram} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
-              <Instagram className="h-5 w-5" />
-            </a>
+            {site.socialLinks.facebook_url && (
+              <a href={site.socialLinks.facebook_url} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <Facebook className="h-5 w-5" />
+              </a>
+            )}
+            {site.socialLinks.instagram_url && (
+              <a href={site.socialLinks.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <Instagram className="h-5 w-5" />
+              </a>
+            )}
+            {site.socialLinks.tiktok_url && (
+              <a href={site.socialLinks.tiktok_url} target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <TikTokIcon className="h-5 w-5" />
+              </a>
+            )}
+            {site.socialLinks.whatsapp_url && (
+              <a href={site.socialLinks.whatsapp_url} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <MessageCircle className="h-5 w-5" />
+              </a>
+            )}
           </div>
         </div>
       </div>
