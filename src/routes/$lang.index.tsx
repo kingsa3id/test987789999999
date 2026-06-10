@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { siteConfig, type Lang } from "@/config/site";
 import { dict, t } from "@/config/i18n";
-import { categories, products as fallbackProducts, reviews, type Product } from "@/config/catalog";
+import { categories, reviews, type Product } from "@/config/catalog";
 import { useI18n } from "@/lib/i18n-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
