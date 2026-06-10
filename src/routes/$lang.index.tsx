@@ -643,15 +643,17 @@ function FloatingActions() {
   const site = useSite();
   return (
     <div className="fixed bottom-5 end-5 z-50 flex flex-col gap-3">
-      <a
-        href={`https://wa.me/${site.business.whatsapp}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={t(dict.cta.whatsapp, lang)}
-        className="grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-[var(--shadow-elegant)] floating transition-transform hover:scale-110"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </a>
+      {site.socialLinks.whatsapp_url && (
+        <a
+          href={site.socialLinks.whatsapp_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t(dict.cta.whatsapp, lang)}
+          className="grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-[var(--shadow-elegant)] floating transition-transform hover:scale-110"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </a>
+      )}
       <a
         href={`tel:${site.business.phone}`}
         aria-label={t(dict.cta.call, lang)}
@@ -660,6 +662,15 @@ function FloatingActions() {
         <Phone className="h-6 w-6" />
       </a>
     </div>
+  );
+}
+
+/* TikTok inline icon (lucide has no TikTok glyph) */
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.59a8.16 8.16 0 0 0 4.77 1.52V6.67a4.79 4.79 0 0 1-1.84-.02z" />
+    </svg>
   );
 }
 
