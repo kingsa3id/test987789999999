@@ -302,12 +302,14 @@ function Hero() {
                 {t(dict.cta.call, lang)}
               </a>
             </Button>
-            <Button asChild size="lg" variant="outline" className="bg-whatsapp text-whatsapp-foreground border-0 hover:bg-whatsapp/90">
-              <a href={`https://wa.me/${site.business.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-5 w-5" />
-                {t(dict.cta.whatsapp, lang)}
-              </a>
-            </Button>
+            {site.socialLinks.whatsapp_url && (
+              <Button asChild size="lg" variant="outline" className="bg-whatsapp text-whatsapp-foreground border-0 hover:bg-whatsapp/90">
+                <a href={site.socialLinks.whatsapp_url} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-5 w-5" />
+                  {t(dict.cta.whatsapp, lang)}
+                </a>
+              </Button>
+            )}
           </div>
         </div>
       </div>
