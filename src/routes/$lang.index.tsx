@@ -28,13 +28,20 @@ import { createContext, useContext, useState } from "react";
 
 /* ---------------- Site context (merged config + DB settings) ---------------- */
 
-type Site = typeof siteConfig;
-const SiteContext = createContext<Site>(siteConfig);
+type SocialLinks = {
+  whatsapp_url: string;
+  instagram_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+};
+type Site = typeof siteConfig & { socialLinks: SocialLinks };
+const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" } });
 const useSite = () => useContext(SiteContext);
 
 function mergeSite(settings: PublicSettings | undefined): Site {
   const b = settings?.business ?? {};
   const h = settings?.hero ?? {};
+  const s = settings?.social ?? {};
   return {
     business: {
       name: b.name ? { ar: b.name, fr: b.name } : siteConfig.business.name,
@@ -57,6 +64,12 @@ function mergeSite(settings: PublicSettings | undefined): Site {
         ar: h.desc_ar || siteConfig.hero.subtitle.ar,
         fr: h.desc_fr || siteConfig.hero.subtitle.fr,
       },
+    },
+    socialLinks: {
+      whatsapp_url: (s.whatsapp_url ?? "").trim(),
+      instagram_url: (s.instagram_url ?? "").trim(),
+      facebook_url: (s.facebook_url ?? "").trim(),
+      tiktok_url: (s.tiktok_url ?? "").trim(),
     },
   } as Site;
 }
