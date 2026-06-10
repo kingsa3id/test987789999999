@@ -393,8 +393,14 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
         <a
-          href={out ? "#contact" : `https://wa.me/${site.business.whatsapp}?text=${encodeURIComponent(t(product.name, lang))}`}
-          target={out ? undefined : "_blank"}
+          href={
+            out
+              ? "#contact"
+              : site.socialLinks.whatsapp_url
+                ? `${site.socialLinks.whatsapp_url}${site.socialLinks.whatsapp_url.includes("?") ? "&" : "?"}text=${encodeURIComponent(t(product.name, lang))}`
+                : "#contact"
+          }
+          target={out || !site.socialLinks.whatsapp_url ? undefined : "_blank"}
           rel="noopener noreferrer"
           className={`mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
             out
