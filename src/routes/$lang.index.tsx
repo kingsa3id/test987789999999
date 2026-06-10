@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { siteConfig, type Lang } from "@/config/site";
 import { dict, t } from "@/config/i18n";
-import { categories, products as fallbackProducts, reviews, type Product } from "@/config/catalog";
+import { categories, reviews, type Product } from "@/config/catalog";
 import { useI18n } from "@/lib/i18n-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,13 +28,20 @@ import { createContext, useContext, useState } from "react";
 
 /* ---------------- Site context (merged config + DB settings) ---------------- */
 
-type Site = typeof siteConfig;
-const SiteContext = createContext<Site>(siteConfig);
+type SocialLinks = {
+  whatsapp_url: string;
+  instagram_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+};
+type Site = typeof siteConfig & { socialLinks: SocialLinks };
+const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" } });
 const useSite = () => useContext(SiteContext);
 
 function mergeSite(settings: PublicSettings | undefined): Site {
   const b = settings?.business ?? {};
   const h = settings?.hero ?? {};
+  const s = settings?.social ?? {};
   return {
     business: {
       name: b.name ? { ar: b.name, fr: b.name } : siteConfig.business.name,
@@ -57,6 +64,12 @@ function mergeSite(settings: PublicSettings | undefined): Site {
         ar: h.desc_ar || siteConfig.hero.subtitle.ar,
         fr: h.desc_fr || siteConfig.hero.subtitle.fr,
       },
+    },
+    socialLinks: {
+      whatsapp_url: (s.whatsapp_url ?? "").trim(),
+      instagram_url: (s.instagram_url ?? "").trim(),
+      facebook_url: (s.facebook_url ?? "").trim(),
+      tiktok_url: (s.tiktok_url ?? "").trim(),
     },
   } as Site;
 }
@@ -87,11 +100,10 @@ export const Route = createFileRoute("/$lang/")({
   loader: async () => {
     try {
       const data = await getPublicSiteData();
-      const products: Product[] =
-        data.products.length > 0 ? data.products.map(mapDbProduct) : fallbackProducts;
+      const products: Product[] = data.products.map(mapDbProduct);
       return { products, settings: data.settings as PublicSettings };
     } catch {
-      return { products: fallbackProducts, settings: {} as PublicSettings };
+      return { products: [] as Product[], settings: {} as PublicSettings };
     }
   },
   errorComponent: ({ error }) => (
@@ -290,12 +302,14 @@ function Hero() {
                 {t(dict.cta.call, lang)}
               </a>
             </Button>
-            <Button asChild size="lg" variant="outline" className="bg-whatsapp text-whatsapp-foreground border-0 hover:bg-whatsapp/90">
-              <a href={`https://wa.me/${site.business.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-5 w-5" />
-                {t(dict.cta.whatsapp, lang)}
-              </a>
-            </Button>
+            {site.socialLinks.whatsapp_url && (
+              <Button asChild size="lg" variant="outline" className="bg-whatsapp text-whatsapp-foreground border-0 hover:bg-whatsapp/90">
+                <a href={site.socialLinks.whatsapp_url} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-5 w-5" />
+                  {t(dict.cta.whatsapp, lang)}
+                </a>
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -379,8 +393,14 @@ function ProductCard({ product }: { product: Product }) {
           )}
         </div>
         <a
-          href={out ? "#contact" : `https://wa.me/${site.business.whatsapp}?text=${encodeURIComponent(t(product.name, lang))}`}
-          target={out ? undefined : "_blank"}
+          href={
+            out
+              ? "#contact"
+              : site.socialLinks.whatsapp_url
+                ? `${site.socialLinks.whatsapp_url}${site.socialLinks.whatsapp_url.includes("?") ? "&" : "?"}text=${encodeURIComponent(t(product.name, lang))}`
+                : "#contact"
+          }
+          target={out || !site.socialLinks.whatsapp_url ? undefined : "_blank"}
           rel="noopener noreferrer"
           className={`mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-semibold transition-colors ${
             out
@@ -411,13 +431,22 @@ function FeaturedProducts({ products }: { products: Product[] }) {
 }
 
 function AllProducts({ products }: { products: Product[] }) {
+  const { lang } = useI18n();
   return (
     <Section id="products" title={dict.sections.products.title} subtitle={dict.sections.products.subtitle}>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-      </div>
+      {products.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 md:p-16 text-center text-muted-foreground">
+          <p className="text-lg font-medium">
+            {lang === "ar" ? "لا توجد منتجات متاحة حالياً" : "Aucun produit disponible actuellement"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
@@ -506,12 +535,14 @@ function Contact() {
       value: site.business.phoneDisplay,
       href: `tel:${site.business.phone}`,
     },
-    {
-      icon: MessageCircle,
-      label: dict.sections.contact.whatsappLabel,
-      value: site.business.phoneDisplay,
-      href: `https://wa.me/${site.business.whatsapp}`,
-    },
+    ...(site.socialLinks.whatsapp_url
+      ? [{
+          icon: MessageCircle,
+          label: dict.sections.contact.whatsappLabel,
+          value: site.business.phoneDisplay,
+          href: site.socialLinks.whatsapp_url,
+        }]
+      : []),
     {
       icon: Mail,
       label: dict.sections.contact.emailLabel,
@@ -574,12 +605,26 @@ function Footer() {
         <div>
           <h4 className="font-semibold mb-3">{t(dict.footer.follow, lang)}</h4>
           <div className="flex gap-3">
-            <a href={site.business.social.facebook} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
-              <Facebook className="h-5 w-5" />
-            </a>
-            <a href={site.business.social.instagram} target="_blank" rel="noopener noreferrer" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
-              <Instagram className="h-5 w-5" />
-            </a>
+            {site.socialLinks.facebook_url && (
+              <a href={site.socialLinks.facebook_url} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <Facebook className="h-5 w-5" />
+              </a>
+            )}
+            {site.socialLinks.instagram_url && (
+              <a href={site.socialLinks.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <Instagram className="h-5 w-5" />
+              </a>
+            )}
+            {site.socialLinks.tiktok_url && (
+              <a href={site.socialLinks.tiktok_url} target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <TikTokIcon className="h-5 w-5" />
+              </a>
+            )}
+            {site.socialLinks.whatsapp_url && (
+              <a href={site.socialLinks.whatsapp_url} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="grid h-10 w-10 place-items-center rounded-full bg-primary-foreground/10 hover:bg-accent hover:text-accent-foreground transition-colors">
+                <MessageCircle className="h-5 w-5" />
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -598,15 +643,17 @@ function FloatingActions() {
   const site = useSite();
   return (
     <div className="fixed bottom-5 end-5 z-50 flex flex-col gap-3">
-      <a
-        href={`https://wa.me/${site.business.whatsapp}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={t(dict.cta.whatsapp, lang)}
-        className="grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-[var(--shadow-elegant)] floating transition-transform hover:scale-110"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </a>
+      {site.socialLinks.whatsapp_url && (
+        <a
+          href={site.socialLinks.whatsapp_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t(dict.cta.whatsapp, lang)}
+          className="grid h-14 w-14 place-items-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-[var(--shadow-elegant)] floating transition-transform hover:scale-110"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </a>
+      )}
       <a
         href={`tel:${site.business.phone}`}
         aria-label={t(dict.cta.call, lang)}
@@ -615,6 +662,15 @@ function FloatingActions() {
         <Phone className="h-6 w-6" />
       </a>
     </div>
+  );
+}
+
+/* TikTok inline icon (lucide has no TikTok glyph) */
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.59a8.16 8.16 0 0 0 4.77 1.52V6.67a4.79 4.79 0 0 1-1.84-.02z" />
+    </svg>
   );
 }
 

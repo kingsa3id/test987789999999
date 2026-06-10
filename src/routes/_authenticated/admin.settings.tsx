@@ -23,6 +23,12 @@ type Biz = {
   maps_url?: string;
 };
 type Hero = { title_ar?: string; title_fr?: string; desc_ar?: string; desc_fr?: string };
+type Social = {
+  whatsapp_url?: string;
+  instagram_url?: string;
+  facebook_url?: string;
+  tiktok_url?: string;
+};
 
 function SettingsPage() {
   const qc = useQueryClient();
@@ -32,12 +38,14 @@ function SettingsPage() {
 
   const [biz, setBiz] = useState<Biz>({});
   const [hero, setHero] = useState<Hero>({});
+  const [social, setSocial] = useState<Social>({});
   const [saved, setSaved] = useState<string | null>(null);
 
   useEffect(() => {
     if (data) {
       setBiz((data.business ?? {}) as Biz);
       setHero((data.hero ?? {}) as Hero);
+      setSocial(((data as Record<string, unknown>).social ?? {}) as Social);
     }
   }, [data]);
 
@@ -45,6 +53,14 @@ function SettingsPage() {
     mutationFn: async () => {
       await set({ data: { key: "business", value: biz } });
       await set({ data: { key: "hero", value: hero } });
+      // Trim and store only non-empty social fields so frontend reliably hides icons
+      const cleanedSocial: Social = {
+        whatsapp_url: (social.whatsapp_url ?? "").trim(),
+        instagram_url: (social.instagram_url ?? "").trim(),
+        facebook_url: (social.facebook_url ?? "").trim(),
+        tiktok_url: (social.tiktok_url ?? "").trim(),
+      };
+      await set({ data: { key: "social", value: cleanedSocial } });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings"] });
@@ -57,7 +73,7 @@ function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Business Settings</h1>
-        <p className="text-sm text-muted-foreground">Edit business info and hero content. Both languages.</p>
+        <p className="text-sm text-muted-foreground">Edit business info, hero content, and social links. Both languages.</p>
       </div>
 
       <Card className="p-5 space-y-4">
@@ -82,6 +98,25 @@ function SettingsPage() {
           <F label="Title (French)"><Input value={hero.title_fr ?? ""} onChange={(e) => setHero({ ...hero, title_fr: e.target.value })} /></F>
           <F label="Description (Arabic)" dir="rtl"><Textarea rows={3} dir="rtl" value={hero.desc_ar ?? ""} onChange={(e) => setHero({ ...hero, desc_ar: e.target.value })} /></F>
           <F label="Description (French)"><Textarea rows={3} value={hero.desc_fr ?? ""} onChange={(e) => setHero({ ...hero, desc_fr: e.target.value })} /></F>
+        </div>
+      </Card>
+
+      <Card className="p-5 space-y-4">
+        <h2 className="font-semibold">Social media</h2>
+        <p className="text-xs text-muted-foreground">Leave a field empty to hide that icon on the website.</p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <F label="WhatsApp link">
+            <Input value={social.whatsapp_url ?? ""} onChange={(e) => setSocial({ ...social, whatsapp_url: e.target.value })} placeholder="https://wa.me/213555000000" />
+          </F>
+          <F label="Instagram link">
+            <Input value={social.instagram_url ?? ""} onChange={(e) => setSocial({ ...social, instagram_url: e.target.value })} placeholder="https://instagram.com/your-handle" />
+          </F>
+          <F label="Facebook link">
+            <Input value={social.facebook_url ?? ""} onChange={(e) => setSocial({ ...social, facebook_url: e.target.value })} placeholder="https://facebook.com/your-page" />
+          </F>
+          <F label="TikTok link">
+            <Input value={social.tiktok_url ?? ""} onChange={(e) => setSocial({ ...social, tiktok_url: e.target.value })} placeholder="https://tiktok.com/@your-handle" />
+          </F>
         </div>
       </Card>
 
