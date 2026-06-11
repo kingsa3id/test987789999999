@@ -525,26 +525,8 @@ function Reviews() {
   );
 }
 
-/* -------------------- MAP -------------------- */
-function MapSection() {
-  const site = useSite();
-  return (
-    <Section id="map" title={dict.sections.map.title} subtitle={dict.sections.map.subtitle} tinted>
-      <div className="overflow-hidden rounded-2xl border border-border shadow-[var(--shadow-card)] aspect-[16/8]">
-        <iframe
-          src={site.business.mapsEmbed}
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Map"
-        />
-      </div>
-    </Section>
-  );
-}
+
+
 
 /* -------------------- CONTACT -------------------- */
 function Contact() {
