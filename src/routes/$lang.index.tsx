@@ -34,8 +34,9 @@ type SocialLinks = {
   facebook_url: string;
   tiktok_url: string;
 };
-type Site = typeof siteConfig & { socialLinks: SocialLinks };
-const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" } });
+type Site = typeof siteConfig & { socialLinks: SocialLinks; logoUrl: string | null };
+const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" }, logoUrl: null });
+
 const useSite = () => useContext(SiteContext);
 
 function mergeSite(settings: PublicSettings | undefined): Site {
