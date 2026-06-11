@@ -72,8 +72,10 @@ function mergeSite(settings: PublicSettings | undefined, logoUrl: string | null)
       facebook_url: (s.facebook_url ?? "").trim(),
       tiktok_url: (s.tiktok_url ?? "").trim(),
     },
+    logoUrl,
   } as Site;
 }
+
 
 function mapDbProduct(p: PublicProduct): Product {
   const statusMap: Record<string, Product["status"]> = {
