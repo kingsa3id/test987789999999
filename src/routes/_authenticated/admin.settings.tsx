@@ -34,7 +34,12 @@ function SettingsPage() {
   const qc = useQueryClient();
   const get = useServerFn(getSettings);
   const set = useServerFn(upsertSetting);
+  const getL = useServerFn(getLogo);
+  const upL = useServerFn(uploadLogo);
+  const rmL = useServerFn(removeLogo);
   const { data } = useQuery({ queryKey: ["settings"], queryFn: () => get() });
+  const { data: logo } = useQuery({ queryKey: ["logo"], queryFn: () => getL() });
+
 
   const [biz, setBiz] = useState<Biz>({});
   const [hero, setHero] = useState<Hero>({});
