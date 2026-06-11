@@ -575,7 +575,7 @@ function Contact() {
       icon: MapPin,
       label: dict.sections.contact.addressLabel,
       value: t(site.business.address, lang),
-      href: "#map",
+      href: site.mapsUrl || "#contact",
     },
   ];
   return (
