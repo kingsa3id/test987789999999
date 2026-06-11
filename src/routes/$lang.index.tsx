@@ -611,7 +611,12 @@ function Footer() {
       <div className="container-padded grid grid-cols-1 md:grid-cols-3 gap-10 py-14">
         <div>
           <div className="flex items-center gap-2 font-bold text-lg">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">E</span>
+            {site.logoUrl ? (
+              <img src={site.logoUrl} alt={t(site.business.name, lang)} className="h-9 w-9 rounded-lg object-contain bg-primary-foreground/10" />
+            ) : (
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">E</span>
+            )}
+
             {t(site.business.name, lang)}
           </div>
           <p className="mt-3 text-sm text-primary-foreground/80">{t(site.business.tagline, lang)}</p>
