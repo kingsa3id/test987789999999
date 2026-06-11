@@ -74,6 +74,8 @@ function mergeSite(settings: PublicSettings | undefined, logoUrl: string | null)
       tiktok_url: (s.tiktok_url ?? "").trim(),
     },
     logoUrl,
+    mapsUrl: (b.maps_url ?? "").trim(),
+
   } as Site;
 }
 
