@@ -314,9 +314,10 @@ function Hero() {
                 {t(dict.cta.call, lang)}
               </a>
             </Button>
-            {site.business.mapsEmbed && (
+            {site.mapsUrl && (
               <Button asChild size="lg" variant="outline" className="bg-background/10 text-primary-foreground border-primary-foreground/30 hover:bg-background/20 hover:text-primary-foreground">
-                <a href={site.business.mapsEmbed} target="_blank" rel="noopener noreferrer">
+                <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer">
+
                   <MapPin className="h-5 w-5" />
                   {lang === "ar" ? "الموقع" : "Localisation"}
                 </a>
