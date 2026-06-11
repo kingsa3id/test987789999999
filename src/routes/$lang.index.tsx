@@ -104,11 +104,12 @@ export const Route = createFileRoute("/$lang/")({
     try {
       const data = await getPublicSiteData();
       const products: Product[] = data.products.map(mapDbProduct);
-      return { products, settings: data.settings as PublicSettings };
+      return { products, settings: data.settings as PublicSettings, logoUrl: data.logoUrl ?? null };
     } catch {
-      return { products: [] as Product[], settings: {} as PublicSettings };
+      return { products: [] as Product[], settings: {} as PublicSettings, logoUrl: null as string | null };
     }
   },
+
   errorComponent: ({ error }) => (
     <div className="container-padded py-20 text-center text-destructive">{error.message}</div>
   ),
