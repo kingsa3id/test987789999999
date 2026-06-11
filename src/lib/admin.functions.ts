@@ -143,6 +143,78 @@ export const uploadProductImage = createServerFn({ method: "POST" })
     return { path, signedUrl: signed?.signedUrl ?? null };
   });
 
+/* ---------------- LOGO ---------------- */
+
+export const uploadLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        filename: z.string().min(1).max(200),
+        contentType: z.string().min(1).max(100),
+        base64: z.string().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin");
+    if (!roles?.length) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: prev } = await supabaseAdmin
+      .from("settings").select("value").eq("key", "branding").maybeSingle();
+    const prevPath = (prev?.value as { logo_path?: string } | null)?.logo_path;
+    if (prevPath) await supabaseAdmin.storage.from("product-images").remove([prevPath]);
+
+    const ext = (data.filename.split(".").pop() ?? "png").toLowerCase().slice(0, 5);
+    const path = `logo/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const bytes = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    const { error } = await supabaseAdmin.storage
+      .from("product-images")
+      .upload(path, bytes, { contentType: data.contentType, upsert: false });
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin
+      .from("settings")
+      .upsert({ key: "branding", value: { logo_path: path } }, { onConflict: "key" });
+
+    const { data: signed } = await supabaseAdmin.storage
+      .from("product-images").createSignedUrl(path, SIGNED_URL_TTL);
+    return { path, signedUrl: signed?.signedUrl ?? null };
+  });
+
+export const removeLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin");
+    if (!roles?.length) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prev } = await supabaseAdmin
+      .from("settings").select("value").eq("key", "branding").maybeSingle();
+    const prevPath = (prev?.value as { logo_path?: string } | null)?.logo_path;
+    if (prevPath) await supabaseAdmin.storage.from("product-images").remove([prevPath]);
+    await supabaseAdmin
+      .from("settings")
+      .upsert({ key: "branding", value: { logo_path: null } }, { onConflict: "key" });
+    return { ok: true };
+  });
+
+export const getLogo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("settings").select("value").eq("key", "branding").maybeSingle();
+    const path = (row?.value as { logo_path?: string } | null)?.logo_path ?? null;
+    if (!path) return { path: null, signedUrl: null };
+    const { data: signed } = await supabaseAdmin.storage
+      .from("product-images").createSignedUrl(path, SIGNED_URL_TTL);
+    return { path, signedUrl: signed?.signedUrl ?? null };
+  });
+
+
 /* ---------------- SETTINGS ---------------- */
 
 export type SettingsMap = {
