@@ -166,8 +166,8 @@ export const Route = createFileRoute("/$lang/")({
 });
 
 function Home() {
-  const { products, settings } = Route.useLoaderData();
-  const site = mergeSite(settings);
+  const { products, settings, logoUrl } = Route.useLoaderData();
+  const site = mergeSite(settings, logoUrl);
   return (
     <SiteContext.Provider value={site}>
       <Header />
@@ -178,7 +178,6 @@ function Home() {
         <AllProducts products={products} />
         <WhyUs />
         <Reviews />
-        <MapSection />
         <Contact />
       </main>
       <Footer />
@@ -186,6 +185,7 @@ function Home() {
     </SiteContext.Provider>
   );
 }
+
 
 /* -------------------- HEADER -------------------- */
 function Header() {
