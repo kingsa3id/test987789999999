@@ -76,5 +76,15 @@ export const getPublicSiteData = createServerFn({ method: "GET" }).handler(async
     (settings as Record<string, unknown>)[row.key] = row.value as Record<string, string>;
   }
 
-  return { products, settings };
+  let logoUrl: string | null = null;
+  const logoPath = settings.branding?.logo_path;
+  if (logoPath) {
+    const { data } = await supabaseAdmin.storage
+      .from("product-images")
+      .createSignedUrl(logoPath, SIGNED_URL_TTL);
+    logoUrl = data?.signedUrl ?? null;
+  }
+
+  return { products, settings, logoUrl };
+
 });
