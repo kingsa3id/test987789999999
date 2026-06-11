@@ -34,8 +34,9 @@ type SocialLinks = {
   facebook_url: string;
   tiktok_url: string;
 };
-type Site = typeof siteConfig & { socialLinks: SocialLinks; logoUrl: string | null };
-const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" }, logoUrl: null });
+type Site = typeof siteConfig & { socialLinks: SocialLinks; logoUrl: string | null; mapsUrl: string };
+const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" }, logoUrl: null, mapsUrl: "" });
+
 
 const useSite = () => useContext(SiteContext);
 
