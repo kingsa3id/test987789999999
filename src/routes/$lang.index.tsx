@@ -39,7 +39,7 @@ const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp
 
 const useSite = () => useContext(SiteContext);
 
-function mergeSite(settings: PublicSettings | undefined): Site {
+function mergeSite(settings: PublicSettings | undefined, logoUrl: string | null): Site {
   const b = settings?.business ?? {};
   const h = settings?.hero ?? {};
   const s = settings?.social ?? {};
