@@ -34,7 +34,15 @@ export type PublicSettings = {
     facebook_url?: string;
     tiktok_url?: string;
   };
+  branding?: { logo_path?: string | null };
 };
+
+export type PublicSiteData = {
+  products: PublicProduct[];
+  settings: PublicSettings;
+  logoUrl: string | null;
+};
+
 
 export const getPublicSiteData = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
