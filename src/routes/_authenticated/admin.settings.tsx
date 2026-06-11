@@ -82,6 +82,55 @@ function SettingsPage() {
       </div>
 
       <Card className="p-5 space-y-4">
+        <h2 className="font-semibold">Logo</h2>
+        <p className="text-xs text-muted-foreground">Upload a logo (PNG/JPG/SVG). If none is set, the website shows the default logo.</p>
+        <div className="flex items-center gap-4">
+          <div className="grid h-20 w-20 place-items-center rounded-xl border border-border bg-secondary overflow-hidden">
+            {logo?.signedUrl ? (
+              <img src={logo.signedUrl} alt="Logo" className="h-full w-full object-contain" />
+            ) : (
+              <span className="text-2xl font-bold text-muted-foreground">E</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex h-9 cursor-pointer items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              {logo?.signedUrl ? "Replace logo" : "Upload logo"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const buf = await file.arrayBuffer();
+                  let bin = "";
+                  const bytes = new Uint8Array(buf);
+                  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                  const base64 = btoa(bin);
+                  await upL({ data: { filename: file.name, contentType: file.type || "image/png", base64 } });
+                  qc.invalidateQueries({ queryKey: ["logo"] });
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {logo?.signedUrl && (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={async () => {
+                  await rmL();
+                  qc.invalidateQueries({ queryKey: ["logo"] });
+                }}
+              >
+                Remove logo
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
+
+      <Card className="p-5 space-y-4">
         <h2 className="font-semibold">Contact</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           <F label="Business name"><Input value={biz.name ?? ""} onChange={(e) => setBiz({ ...biz, name: e.target.value })} /></F>
