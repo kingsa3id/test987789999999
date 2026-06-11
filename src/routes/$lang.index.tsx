@@ -204,11 +204,16 @@ function Header() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="container-padded flex h-16 items-center justify-between gap-4">
         <a href="#top" className="flex items-center gap-2 font-bold text-lg">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-card)]">
-            E
-          </span>
+          {site.logoUrl ? (
+            <img src={site.logoUrl} alt={t(site.business.name, lang)} className="h-9 w-9 rounded-lg object-contain bg-secondary" />
+          ) : (
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-card)]">
+              E
+            </span>
+          )}
           <span className="hidden sm:inline">{t(site.business.name, lang)}</span>
         </a>
+
         <nav className="hidden md:flex items-center gap-6">
           {nav.map((n) => (
             <a
