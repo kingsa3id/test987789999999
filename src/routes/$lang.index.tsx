@@ -34,11 +34,13 @@ type SocialLinks = {
   facebook_url: string;
   tiktok_url: string;
 };
-type Site = typeof siteConfig & { socialLinks: SocialLinks };
-const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" } });
+type Site = typeof siteConfig & { socialLinks: SocialLinks; logoUrl: string | null; mapsUrl: string };
+const SiteContext = createContext<Site>({ ...siteConfig, socialLinks: { whatsapp_url: "", instagram_url: "", facebook_url: "", tiktok_url: "" }, logoUrl: null, mapsUrl: "" });
+
+
 const useSite = () => useContext(SiteContext);
 
-function mergeSite(settings: PublicSettings | undefined): Site {
+function mergeSite(settings: PublicSettings | undefined, logoUrl: string | null): Site {
   const b = settings?.business ?? {};
   const h = settings?.hero ?? {};
   const s = settings?.social ?? {};
@@ -71,8 +73,12 @@ function mergeSite(settings: PublicSettings | undefined): Site {
       facebook_url: (s.facebook_url ?? "").trim(),
       tiktok_url: (s.tiktok_url ?? "").trim(),
     },
+    logoUrl,
+    mapsUrl: (b.maps_url ?? "").trim(),
+
   } as Site;
 }
+
 
 function mapDbProduct(p: PublicProduct): Product {
   const statusMap: Record<string, Product["status"]> = {
@@ -101,11 +107,12 @@ export const Route = createFileRoute("/$lang/")({
     try {
       const data = await getPublicSiteData();
       const products: Product[] = data.products.map(mapDbProduct);
-      return { products, settings: data.settings as PublicSettings };
+      return { products, settings: data.settings as PublicSettings, logoUrl: data.logoUrl ?? null };
     } catch {
-      return { products: [] as Product[], settings: {} as PublicSettings };
+      return { products: [] as Product[], settings: {} as PublicSettings, logoUrl: null as string | null };
     }
   },
+
   errorComponent: ({ error }) => (
     <div className="container-padded py-20 text-center text-destructive">{error.message}</div>
   ),
@@ -162,8 +169,8 @@ export const Route = createFileRoute("/$lang/")({
 });
 
 function Home() {
-  const { products, settings } = Route.useLoaderData();
-  const site = mergeSite(settings);
+  const { products, settings, logoUrl } = Route.useLoaderData();
+  const site = mergeSite(settings, logoUrl);
   return (
     <SiteContext.Provider value={site}>
       <Header />
@@ -174,7 +181,6 @@ function Home() {
         <AllProducts products={products} />
         <WhyUs />
         <Reviews />
-        <MapSection />
         <Contact />
       </main>
       <Footer />
@@ -182,6 +188,7 @@ function Home() {
     </SiteContext.Provider>
   );
 }
+
 
 /* -------------------- HEADER -------------------- */
 function Header() {
@@ -200,11 +207,16 @@ function Header() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="container-padded flex h-16 items-center justify-between gap-4">
         <a href="#top" className="flex items-center gap-2 font-bold text-lg">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-card)]">
-            E
-          </span>
+          {site.logoUrl ? (
+            <img src={site.logoUrl} alt={t(site.business.name, lang)} className="h-9 w-9 rounded-lg object-contain bg-secondary" />
+          ) : (
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-card)]">
+              E
+            </span>
+          )}
           <span className="hidden sm:inline">{t(site.business.name, lang)}</span>
         </a>
+
         <nav className="hidden md:flex items-center gap-6">
           {nav.map((n) => (
             <a
@@ -302,6 +314,16 @@ function Hero() {
                 {t(dict.cta.call, lang)}
               </a>
             </Button>
+            {site.mapsUrl && (
+              <Button asChild size="lg" variant="outline" className="bg-background/10 text-primary-foreground border-primary-foreground/30 hover:bg-background/20 hover:text-primary-foreground">
+                <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer">
+
+                  <MapPin className="h-5 w-5" />
+                  {lang === "ar" ? "الموقع" : "Localisation"}
+                </a>
+              </Button>
+            )}
+
             {site.socialLinks.whatsapp_url && (
               <Button asChild size="lg" variant="outline" className="bg-whatsapp text-whatsapp-foreground border-0 hover:bg-whatsapp/90">
                 <a href={site.socialLinks.whatsapp_url} target="_blank" rel="noopener noreferrer">
@@ -503,26 +525,8 @@ function Reviews() {
   );
 }
 
-/* -------------------- MAP -------------------- */
-function MapSection() {
-  const site = useSite();
-  return (
-    <Section id="map" title={dict.sections.map.title} subtitle={dict.sections.map.subtitle} tinted>
-      <div className="overflow-hidden rounded-2xl border border-border shadow-[var(--shadow-card)] aspect-[16/8]">
-        <iframe
-          src={site.business.mapsEmbed}
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Map"
-        />
-      </div>
-    </Section>
-  );
-}
+
+
 
 /* -------------------- CONTACT -------------------- */
 function Contact() {
@@ -553,7 +557,7 @@ function Contact() {
       icon: MapPin,
       label: dict.sections.contact.addressLabel,
       value: t(site.business.address, lang),
-      href: "#map",
+      href: site.mapsUrl || "#contact",
     },
   ];
   return (
@@ -589,7 +593,12 @@ function Footer() {
       <div className="container-padded grid grid-cols-1 md:grid-cols-3 gap-10 py-14">
         <div>
           <div className="flex items-center gap-2 font-bold text-lg">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">E</span>
+            {site.logoUrl ? (
+              <img src={site.logoUrl} alt={t(site.business.name, lang)} className="h-9 w-9 rounded-lg object-contain bg-primary-foreground/10" />
+            ) : (
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">E</span>
+            )}
+
             {t(site.business.name, lang)}
           </div>
           <p className="mt-3 text-sm text-primary-foreground/80">{t(site.business.tagline, lang)}</p>
